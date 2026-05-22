@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KANAGAWA — The Great Wave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --alabaster: #F4F4F0;
+    --ivory: #FAFAF7;
+    --ink: #0F0F0E;
+    --ink-60: rgba(15,15,14,0.6);
+    --ink-20: rgba(15,15,14,0.2);
+    --ink-08: rgba(15,15,14,0.08);
+    --wave-blue: #1A3A5C;
+    --wave-foam: #E8EFF7;
+    --accent: #C8391A;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --mono: 'DM Mono', 'Courier New', monospace;
+    --display: 'Bebas Neue', Impact, sans-serif;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--alabaster);
+    color: var(--ink);
+    font-family: var(--mono);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ─── CUSTOM CURSOR ─── */
+  #cursor {
+    position: fixed; top: 0; left: 0; z-index: 9999;
+    width: 10px; height: 10px;
+    background: var(--ink);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s var(--ease-out-expo), height 0.3s var(--ease-out-expo), background 0.3s;
+    mix-blend-mode: multiply;
+  }
+  #cursor.expand { width: 48px; height: 48px; background: var(--accent); }
+  #cursor.light { background: var(--ivory); mix-blend-mode: difference; }
+
+  /* ─── LOADER ─── */
+  #loader {
+    position: fixed; inset: 0; z-index: 9998;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 2rem;
+  }
+  #loader-text {
+    font-family: var(--display);
+    font-size: clamp(3rem, 10vw, 8rem);
+    color: var(--alabaster);
+    letter-spacing: 0.15em;
+    overflow: hidden;
+  }
+  #loader-text span { display: inline-block; transform: translateY(110%); }
+  #loader-line {
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 1.2s var(--ease-out-expo);
+  }
+  #loader-count {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: rgba(244,244,240,0.4);
+    letter-spacing: 0.2em;
+  }
+
+  /* ─── NAVIGATION ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 1.5rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: transparent;
+    mix-blend-mode: screen;
+  }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 1.2rem;
+    letter-spacing: 0.3em;
+    color: white;
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex; gap: 2.5rem; list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: rgba(255, 255, 255, 0.7); }
+  .nav-year {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: white;
+  }
+
+  /* ─── HERO ─── */
+  #hero {
+    position: relative;
+    height: 300vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--ink);
+  }
+
+  .hero-video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  /* Glassmorphism mask */
+  .hero-video-container::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 2;
+    background: none;
+    backdrop-filter: none;
+    border: none;
+  }
+
+  .hero-video-container video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: saturate(0.85) contrast(1.05) brightness(0.7);
+  }
+
+  /* Fallback gradient when no video */
+  .hero-video-fallback {
+    width: 100%; height: 100%;
+    background: linear-gradient(
+      170deg,
+      #1A3A5C 0%, #0D2640 30%,
+      #0A1E35 60%, #061525 100%
+    );
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .wave-svg-fallback {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    opacity: 0.9;
+  }
+  .fallback-label {
+    position: absolute;
+    bottom: 12px; left: 0; right: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.3em;
+    color: rgba(232,239,247,0.35);
+    text-transform: uppercase;
+  }
+
+  .hero-title {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .hero-title-main {
+    font-family: var(--display);
+    font-size: clamp(5rem, 20vw, 16rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: white;
+    mix-blend-mode: normal;
+  }
+
+  .hero-title-main span {
+    display: inline;
+    transform-origin: center;
+  }
+
+  .hero-meta {
+    display: none;
+  }
+
+  .hero-meta-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-meta-value {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .hero-scroll-cue {
+    position: absolute;
+    bottom: 2rem; left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .hero-scroll-cue span {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+  }
+  .scroll-arrow {
+    width: 1px; height: 40px;
+    background: var(--ink-20);
+    position: relative;
+    overflow: hidden;
+  }
+  .scroll-arrow::after {
+    content: '';
+    position: absolute;
+    top: -100%; left: 0;
+    width: 100%; height: 100%;
+    background: var(--accent);
+    animation: scrollDown 1.8s ease-in-out infinite;
+  }
+  @keyframes scrollDown {
+    0% { top: -100%; }
+    100% { top: 100%; }
+  }
+
+  /* ─── MARQUEE BAND ─── */
+  .marquee-band {
+    background: var(--ink);
+    padding: 0.9rem 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-track {
+    display: inline-flex;
+    animation: marquee 28s linear infinite;
+  }
+  .marquee-track span {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    letter-spacing: 0.25em;
+    color: var(--alabaster);
+    padding: 0 3rem;
+  }
+  .marquee-track .accent { color: var(--accent); }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ─── INTRO TEXT ─── */
+  #intro {
+    padding: clamp(5rem, 10vw, 10rem) 2.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .intro-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+    margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .intro-eyebrow::before {
+    content: '';
+    width: 32px; height: 1px;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .intro-headline {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 2.5rem;
+  }
+  .intro-headline em { font-style: italic; color: var(--wave-blue); }
+  .intro-body {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.9;
+    color: var(--ink-60);
+    max-width: 520px;
+    font-weight: 300;
+  }
+
+  /* ─── SCROLL SEQUENCE ─── */
+  #scroll-sequence {
+    position: relative;
+    /* height set by JS */
+    background: var(--ivory);
+  }
+
+  .sequence-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ivory);
+  }
+
+  #wave-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+
+  /* The canvas-rendered wave frame */
+  .sequence-canvas-wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas#waveCanvas {
+    max-width: 100%;
+    max-height: 90vh;
+    mix-blend-mode: multiply;
+  }
+
+  .sequence-overlay {
+    position: absolute; inset: 0;
+    display: flex;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .sequence-progress {
+    position: absolute;
+    left: 2.5rem; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    z-index: 3;
+  }
+  .progress-track {
+    width: 1px; height: 120px;
+    background: var(--ink-08);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 0%;
+    background: var(--ink);
+    transition: height 0.1s;
+  }
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-60);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+  }
+
+  .sequence-frame-count {
+    position: absolute;
+    right: 2.5rem; bottom: 3rem;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--ink-60);
+    z-index: 3;
+  }
+  .sequence-frame-count span { color: var(--ink); }
+
+  .sequence-caption {
+    position: absolute;
+    bottom: 3rem; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .sequence-caption.visible { opacity: 1; }
+  .sequence-caption p {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-60);
+    letter-spacing: 0.05em;
+  }
+
+  /* Wave illustration rendered in canvas via JS */
+
+  /* ─── DETAILS SECTION ─── */
+  #details {
+    padding: clamp(5rem, 10vw, 12rem) 2.5rem;
+    background: var(--ink);
+    color: var(--ivory);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .details-bg-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--display);
+    font-size: clamp(8rem, 25vw, 22rem);
+    letter-spacing: 0.05em;
+    color: rgba(244,244,240,0.03);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    border: 1px solid rgba(244,244,240,0.08);
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .detail-card {
+    padding: clamp(2rem, 4vw, 4rem);
+    border: 1px solid rgba(244,244,240,0.08);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+    cursor: none;
+  }
+
+  .detail-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(244,244,240,0.03);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .detail-card:hover::after { opacity: 1; }
+
+  .detail-card-number {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    margin-bottom: 2rem;
+  }
+
+  .detail-card-title {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    letter-spacing: 0.05em;
+    color: var(--ivory);
+    margin-bottom: 1.5rem;
+    line-height: 1.05;
+  }
+
+  .detail-card-body {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    line-height: 1.85;
+    color: rgba(244,244,240,0.5);
+    font-weight: 300;
+    max-width: 380px;
+  }
+
+  .detail-card-year {
+    position: absolute;
+    bottom: 2rem; right: 2rem;
+    font-family: var(--serif);
+    font-size: 4rem;
+    font-weight: 600;
+    color: rgba(244,244,240,0.04);
+    line-height: 1;
+    user-select: none;
+  }
+
+  /* Hover video snippet */
+  .detail-video-snippet {
+    position: absolute; inset: 0; z-index: 2;
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-out-expo);
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .detail-card:hover .detail-video-snippet { opacity: 1; }
+  .detail-video-snippet video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: saturate(0.5);
+    mix-blend-mode: overlay;
+  }
+
+  /* ─── DATA STRIP ─── */
+  #data-strip {
+    padding: 5rem 2.5rem;
+    background: var(--alabaster);
+    border-top: 1px solid var(--ink-08);
+    border-bottom: 1px solid var(--ink-08);
+  }
+
+  .data-strip-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--ink-08);
+    border: 1px solid var(--ink-08);
+  }
+
+  .data-item {
+    padding: 2.5rem 2rem;
+    background: var(--alabaster);
+  }
+  .data-label {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-60);
+    margin-bottom: 0.75rem;
+  }
+  .data-value {
+    font-family: var(--display);
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    color: var(--ink);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .data-unit {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--ink-60);
+    margin-top: 0.5rem;
+    font-weight: 300;
+  }
+
+  /* ─── HOKUSAI SECTION ─── */
+  #hokusai {
+    padding: clamp(6rem, 12vw, 14rem) 2.5rem;
+    background: var(--ivory);
+    position: relative;
+  }
+
+  .hokusai-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+
+  .hokusai-portrait {
+    position: relative;
+  }
+
+  .hokusai-portrait-frame {
+    aspect-ratio: 3/4;
+    background: var(--wave-foam);
+    border: 1px solid var(--ink-08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hokusai-portrait-inner {
+    width: 100%; height: 100%;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 39px,
+        var(--ink-08) 39px,
+        var(--ink-08) 40px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 39px,
+        var(--ink-08) 40px,
+        var(--ink-08) 40px
+      );
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display);
+    font-size: clamp(5rem, 12vw, 10rem);
+    color: var(--ink-08);
+    letter-spacing: -0.05em;
+  }
+
+  .hokusai-portrait-caption {
+    position: absolute;
+    bottom: 1.5rem; left: 1.5rem;
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--ink-60);
+    text-transform: uppercase;
+  }
+
+  .hokusai-portrait::before {
+    content: '';
+    position: absolute;
+    top: -12px; right: -12px;
+    width: 100%; height: 100%;
+    border: 1px solid var(--ink-20);
+    z-index: -1;
+  }
+
+  .hokusai-text-block {}
+
+  .hokusai-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+  }
+
+  .hokusai-name {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 1rem;
+  }
+
+  .hokusai-dates {
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink-60);
+    margin-bottom: 2.5rem;
+  }
+
+  .hokusai-bio {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    line-height: 1.95;
+    color: var(--ink-60);
+    font-weight: 300;
+    margin-bottom: 2rem;
+  }
+
+  .hokusai-facts {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .hokusai-facts li {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    color: var(--ink-60);
+    padding-left: 1.5rem;
+    position: relative;
+    font-weight: 300;
+  }
+  .hokusai-facts li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 3rem 2.5rem;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(244,244,240,0.06);
+  }
+  .footer-logo {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    color: var(--ivory);
+  }
+  .footer-line {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(244,244,240,0.3);
+  }
+
+  /* ─── UTILITIES ─── */
+  .reveal-up {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  @media (max-width: 768px) {
+    .details-grid { grid-template-columns: 1fr; }
+    .data-strip-inner { grid-template-columns: 1fr 1fr; }
+    .hokusai-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .nav-links { display: none; }
+    .hero-title-main { font-size: clamp(4rem, 18vw, 8rem); }
+    .hero-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div id="loader-text">
+    <span>K</span><span>A</span><span>N</span><span>A</span><span>G</span><span>A</span><span>W</span><span>A</span>
+  </div>
+  <div id="loader-line"></div>
+  <div id="loader-count">000 / 100</div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">KNW</a>
+  <ul class="nav-links">
+    <li><a href="#intro">About</a></li>
+    <li><a href="#scroll-sequence">The Wave</a></li>
+    <li><a href="#hokusai">Hokusai</a></li>
+  </ul>
+  <div class="nav-year">神奈川沖浪裏 — 1831</div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-video-container">
+    <!-- Replace src with a real 9:16 wave video URL -->
+    <video autoplay muted loop playsinline
+           src="wave.mp4"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    </video>
+    <!-- SVG Fallback if video unavailable -->
+    <div class="hero-video-fallback">
+      <svg class="wave-svg-fallback" viewBox="0 0 320 480" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax slice">
+        <!-- Deep ocean layers -->
+        <rect width="320" height="480" fill="#061525"/>
+        <path d="M0 380 Q80 340 160 380 Q240 420 320 380 L320 480 L0 480Z" fill="#0D2640" opacity="0.9"/>
+        <path d="M0 340 Q60 300 130 345 Q200 385 270 335 Q295 320 320 340 L320 480 L0 480Z" fill="#1A3A5C" opacity="0.8"/>
+        <!-- Main wave body -->
+        <path d="M0 220 Q40 160 100 200 Q160 240 200 170 Q230 115 280 140 Q310 155 320 180 L320 480 L0 480Z" fill="#1E4570"/>
+        <!-- Crest -->
+        <path d="M180 140 Q215 80 265 100 Q295 115 315 145 Q310 125 280 110 Q250 95 220 115 Q195 130 180 140Z" fill="#2A5F8F"/>
+        <!-- Foam fingers -->
+        <path d="M220 115 Q230 95 245 90 Q250 105 240 118Z" fill="#C8D8E8" opacity="0.85"/>
+        <path d="M240 108 Q255 85 270 88 Q268 108 255 115Z" fill="#D8E8F2" opacity="0.8"/>
+        <path d="M262 102 Q278 80 292 88 Q288 108 272 112Z" fill="#E2EEF8" opacity="0.75"/>
+        <path d="M280 110 Q295 88 315 100 Q312 122 295 128Z" fill="#EAF3FA" opacity="0.7"/>
+        <!-- White foam tips -->
+        <path d="M218 112 Q228 100 238 105 Q232 116 222 118Z" fill="white" opacity="0.9"/>
+        <path d="M238 105 Q252 88 264 95 Q258 112 246 114Z" fill="white" opacity="0.85"/>
+        <path d="M260 98 Q278 78 290 86 Q284 106 272 109Z" fill="white" opacity="0.8"/>
+        <path d="M288 105 Q305 86 318 98 L316 118 Q302 122 290 116Z" fill="white" opacity="0.75"/>
+        <!-- Mt Fuji -->
+        <path d="M55 170 L85 110 L115 170Z" fill="#8FA8C0" opacity="0.35"/>
+        <path d="M70 148 L85 110 L100 148Z" fill="white" opacity="0.15"/>
+        <!-- Foreground wave -->
+        <path d="M-10 310 Q50 270 120 300 Q190 330 250 290 Q285 270 320 285 L320 480 L-10 480Z" fill="#0D2640" opacity="0.95"/>
+        <!-- Boats (tiny silhouettes) -->
+        <rect x="52" y="295" width="28" height="5" rx="2" fill="#061525" opacity="0.7"/>
+        <path d="M60 295 L66 282 L72 295Z" fill="#061525" opacity="0.5"/>
+      </svg>
+      <div class="fallback-label">Place 9:16 wave video here</div>
+    </div>
+  </div>
+
+  <div class="hero-title">
+    <div class="hero-title-main">
+      <span class="reveal-hero">KANAGAWA</span>
+    </div>
+    <div class="hero-meta">
+      <p class="hero-meta-label">Series</p>
+      <p class="hero-meta-value">Thirty-six Views of Mount Fuji</p>
+    </div>
+  </div>
+
+  <div class="hero-scroll-cue">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-band">
+  <div class="marquee-track">
+    <span>神奈川沖浪裏</span>
+    <span class="accent">—</span>
+    <span>The Great Wave</span>
+    <span class="accent">—</span>
+    <span>Katsushika Hokusai</span>
+    <span class="accent">—</span>
+    <span>木版画</span>
+    <span class="accent">—</span>
+    <span>Ukiyo-e</span>
+    <span class="accent">—</span>
+    <span>1831</span>
+    <span class="accent">—</span>
+    <span>神奈川沖浪裏</span>
+    <span class="accent">—</span>
+    <span>The Great Wave</span>
+    <span class="accent">—</span>
+    <span>Katsushika Hokusai</span>
+    <span class="accent">—</span>
+    <span>木版画</span>
+    <span class="accent">—</span>
+    <span>Ukiyo-e</span>
+    <span class="accent">—</span>
+    <span>1831</span>
+    <span class="accent">—</span>
+  </div>
+</div>
+
+<!-- INTRO -->
+<section id="intro">
+  <div class="intro-eyebrow">The iconic woodblock print</div>
+  <h2 class="intro-headline reveal-up">
+    A single moment of <em>infinite power</em>,<br>
+    suspended between chaos and order.
+  </h2>
+  <p class="intro-body reveal-up">
+    Completed around 1831, Under the Wave off Kanagawa is among the most recognized works of art in human history. Hokusai captured the moment a towering ocean surge dwarfs the distant silhouette of Mount Fuji — a collision of the ephemeral and the eternal, the terrifying and the sublime.
+  </p>
+</section>
+
+<!-- SCROLL SEQUENCE -->
+<section id="scroll-sequence">
+  <div class="sequence-sticky">
+    <div class="sequence-canvas-wrap">
+      <canvas id="waveCanvas" width="1200" height="800"></canvas>
+    </div>
+
+    <div class="sequence-progress">
+      <div class="progress-label">Build</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="sequence-frame-count">
+      Frame <span id="frameNum">000</span> / <span id="frameTot">120</span>
+    </div>
+
+    <div class="sequence-caption" id="seqCaption">
+      <p id="seqCaptionText"></p>
+    </div>
+  </div>
+</section>
+
+<!-- DATA STRIP -->
+<section id="data-strip">
+  <div class="data-strip-inner">
+    <div class="data-item reveal-up">
+      <div class="data-label">Created</div>
+      <div class="data-value">1831</div>
+      <div class="data-unit">Edo Period Japan</div>
+    </div>
+    <div class="data-item reveal-up">
+      <div class="data-label">Wave Height</div>
+      <div class="data-value">10M</div>
+      <div class="data-unit">Estimated real-world scale</div>
+    </div>
+    <div class="data-item reveal-up">
+      <div class="data-label">Known prints</div>
+      <div class="data-value">~8K</div>
+      <div class="data-unit">Original copies produced</div>
+    </div>
+    <div class="data-item reveal-up">
+      <div class="data-label">Auction Record</div>
+      <div class="data-value">$2.8M</div>
+      <div class="data-unit">Christie's, 2021</div>
+    </div>
+  </div>
+</section>
+
+<!-- DETAILS / HOVER VIDEO SECTION -->
+<section id="details">
+  <div class="details-bg-text">波</div>
+  <div class="details-grid">
+    <div class="detail-card">
+      <div class="detail-card-number">01 — COMPOSITION</div>
+      <div class="detail-card-title">The Asymmetric Frame</div>
+      <p class="detail-card-body">
+        Hokusai positioned the wave to create a dynamic diagonal thrust across the picture plane. The curl of the foam forms a natural frame — the eye spirals inward toward the tiny boats and, ultimately, toward Fuji. Nothing is by accident.
+      </p>
+      <div class="detail-card-year">01</div>
+      <div class="detail-video-snippet">
+        <video autoplay muted loop playsinline
+               src="https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-crashing-on-rocks-1sea-20373-large.mp4">
+        </video>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-card-number">02 — TECHNIQUE</div>
+      <div class="detail-card-title">Prussian Blue Ink</div>
+      <p class="detail-card-body">
+        The print's distinctive blue — Berorin-ai, or Berlin blue — was a newly imported synthetic pigment. It was more vivid, stable, and water-resistant than traditional Japanese pigments. Hokusai embraced it immediately, using it to build luminous oceanic depth.
+      </p>
+      <div class="detail-card-year">02</div>
+      <div class="detail-video-snippet">
+        <video autoplay muted loop playsinline
+               src="https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-ocean-1sea-1209-large.mp4">
+        </video>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-card-number">03 — SYMBOLISM</div>
+      <div class="detail-card-title">Fuji, The Eternal</div>
+      <p class="detail-card-body">
+        Mount Fuji appears small, distant, serene — yet immovable. The wave threatens, the boats strain, but Fuji simply endures. It is the constant against which all impermanence is measured. A meditation on human fragility beneath natural forces.
+      </p>
+      <div class="detail-card-year">03</div>
+      <div class="detail-video-snippet">
+        <video autoplay muted loop playsinline
+               src="https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-ocean-waves-1sea-4-large.mp4">
+        </video>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-card-number">04 — LEGACY</div>
+      <div class="detail-card-title">Global Influence</div>
+      <p class="detail-card-body">
+        From Debussy's La Mer to Monet's water lily series, from Art Nouveau posters to the Japanese Yen — the wave's visual DNA infiltrated every corner of global culture. It is perhaps the first truly viral image.
+      </p>
+      <div class="detail-card-year">04</div>
+      <div class="detail-video-snippet">
+        <video autoplay muted loop playsinline
+               src="https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-under-a-blue-sky-1sea-21416-large.mp4">
+        </video>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOKUSAI -->
+<section id="hokusai">
+  <div class="hokusai-inner">
+    <div class="hokusai-portrait reveal-up">
+      <div class="hokusai-portrait-frame">
+        <div class="hokusai-portrait-inner">北斎</div>
+        <div class="hokusai-portrait-caption">Katsushika Hokusai — Portrait placeholder</div>
+      </div>
+    </div>
+    <div class="hokusai-text-block">
+      <div class="hokusai-eyebrow">The Artist</div>
+      <div class="hokusai-name reveal-up">KATSU-<br>SHIKA<br>HOKUSAI</div>
+      <div class="hokusai-dates reveal-up">October 31, 1760 — May 10, 1849</div>
+      <p class="hokusai-bio reveal-up">
+        Born into an artisan family in Edo — modern Tokyo — Hokusai apprenticed himself to a mirror-polisher, a woodblock cutter, and a lending library before entering the studio of painter Katsukawa Shunshō at eighteen. Over nine decades he worked under thirty different pseudonyms, produced over thirty thousand artworks, and changed his name upon nearly every creative breakthrough — treating identity itself as a mutable artistic medium.
+      </p>
+      <ul class="hokusai-facts">
+        <li>Changed his name over 30 times throughout his life</li>
+        <li>Created the Wave at the age of 71, during his artistic peak</li>
+        <li>Called himself "the old man mad about drawing"</li>
+        <li>His final sigh reportedly was: "If only Heaven would give me just five more years..."</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">KNW</div>
+  <div class="footer-line">神奈川沖浪裏 — An Interactive Experience</div>
+  <div class="footer-line">© 2025 — All rights reserved</div>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────────
+   CURSOR
+───────────────────────────────────────────── */
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .detail-card, .data-item').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
+});
+const darkSections = document.querySelectorAll('#details, footer');
+darkSections.forEach(s => {
+  s.addEventListener('mouseenter', () => cursor.classList.add('light'));
+  s.addEventListener('mouseleave', () => cursor.classList.remove('light'));
+});
+
+/* ─────────────────────────────────────────────
+   LOADER
+───────────────────────────────────────────── */
+const loaderLetters = document.querySelectorAll('#loader-text span');
+const loaderLine = document.getElementById('loader-line');
+const loaderCount = document.getElementById('loader-count');
+const loader = document.getElementById('loader');
+
+let count = 0;
+const countEl = loaderCount;
+const countAnim = setInterval(() => {
+  count = Math.min(count + Math.floor(Math.random() * 12 + 3), 100);
+  countEl.textContent = String(count).padStart(3, '0') + ' / 100';
+  if (count >= 100) clearInterval(countAnim);
+}, 60);
+
+// Animate letters in
+loaderLetters.forEach((l, i) => {
+  setTimeout(() => {
+    l.style.transition = `transform 0.7s cubic-bezier(0.16,1,0.3,1) ${i * 0.04}s, opacity 0.7s ease ${i * 0.04}s`;
+    l.style.transform = 'translateY(0)';
+    l.style.opacity = '1';
+  }, 100);
+});
+
+setTimeout(() => {
+  loaderLine.style.width = '200px';
+}, 300);
+
+setTimeout(() => {
+  loader.style.transition = 'opacity 0.8s ease, visibility 0.8s ease';
+  loader.style.opacity = '0';
+  loader.style.visibility = 'hidden';
+  initAnimations();
+}, 2200);
+
+/* ─────────────────────────────────────────────
+   GSAP + ScrollTrigger SETUP
+───────────────────────────────────────────── */
+function initAnimations() {
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Hero title lines
+  gsap.fromTo('.reveal-hero', {
+    yPercent: 110,
+    opacity: 0
+  }, {
+    yPercent: 0,
+    opacity: 1,
+    duration: 1.1,
+    ease: 'power4.out',
+    delay: 0.1
+  });
+
+  // Reveal-up elements
+  gsap.utils.toArray('.reveal-up').forEach(el => {
+    gsap.fromTo(el, { y: 35, opacity: 0 }, {
+      y: 0, opacity: 1, duration: 1, ease: 'power3.out',
+      scrollTrigger: {
+        trigger: el,
+        start: 'top 88%',
+        toggleActions: 'play none none none'
+      }
+    });
+  });
+
+  // Horizontal parallax on hero video
+  gsap.to('.hero-video-container', {
+    y: '20%',
+    ease: 'none',
+    scrollTrigger: {
+      trigger: '#hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true
+    }
+  });
+
+  // Detail cards stagger
+  gsap.fromTo('.detail-card', { y: 40, opacity: 0 }, {
+    y: 0, opacity: 1, stagger: 0.12, duration: 0.9, ease: 'power3.out',
+    scrollTrigger: {
+      trigger: '#details',
+      start: 'top 75%'
+    }
+  });
+
+  // Data items count up
+  gsap.utils.toArray('.data-value').forEach(el => {
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 85%',
+      onEnter: () => el.classList.add('counted')
+    });
+  });
+
+  initWaveSequence();
+}
+
+/* ─────────────────────────────────────────────
+   WAVE CANVAS SEQUENCE
+   Renders a programmatic frame-by-frame wave
+   animation driven by scroll position.
+   Replace with real image sequence when available.
+───────────────────────────────────────────── */
+function initWaveSequence() {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const TOTAL_FRAMES = 120;
+  const SCROLL_HEIGHT = window.innerHeight * 6; // 600vh of scroll
+
+  // Set sequence section height
+  document.getElementById('scroll-sequence').style.height = SCROLL_HEIGHT + 'px';
+  document.getElementById('frameTot').textContent = String(TOTAL_FRAMES).padStart(3, '0');
+
+  let currentFrame = 0;
+
+  const captions = [
+    { at: 0.0, text: 'The deep ocean stirs...' },
+    { at: 0.2, text: 'Energy rises from the seabed.' },
+    { at: 0.4, text: 'The swell reaches its apex.' },
+    { at: 0.6, text: 'Foam-fingers clutch at the sky.' },
+    { at: 0.8, text: 'Mount Fuji watches in silence.' },
+    { at: 0.95, text: 'A perfect moment. Forever.' },
+  ];
+
+  function getCaption(progress) {
+    let current = '';
+    for (const c of captions) {
+      if (progress >= c.at) current = c.text;
+    }
+    return current;
+  }
+
+  function drawFrame(frame) {
+    const progress = frame / TOTAL_FRAMES; // 0 → 1
+    const W = canvas.width, H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+    const skyBrightness = 0.3 + progress * 0.5;
+    skyGrad.addColorStop(0, `rgba(240,243,248,${skyBrightness})`);
+    skyGrad.addColorStop(1, `rgba(220,232,245,${skyBrightness * 0.6})`);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Mt. Fuji (appears at progress > 0.5)
+    if (progress > 0.3) {
+      const fujiOpacity = Math.max(0, (progress - 0.3) / 0.3);
+      ctx.save();
+      ctx.globalAlpha = fujiOpacity * 0.55;
+      ctx.fillStyle = '#8FA8C0';
+      ctx.beginPath();
+      ctx.moveTo(W * 0.12, H * 0.45);
+      ctx.lineTo(W * 0.22, H * 0.22);
+      ctx.lineTo(W * 0.32, H * 0.45);
+      ctx.closePath();
+      ctx.fill();
+      // Snow cap
+      ctx.fillStyle = '#E8EFF7';
+      ctx.beginPath();
+      ctx.moveTo(W * 0.185, H * 0.28);
+      ctx.lineTo(W * 0.22, H * 0.22);
+      ctx.lineTo(W * 0.255, H * 0.28);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Ocean base
+    const oceanGrad = ctx.createLinearGradient(0, H * 0.35, 0, H);
+    oceanGrad.addColorStop(0, '#1A3A5C');
+    oceanGrad.addColorStop(0.5, '#0D2640');
+    oceanGrad.addColorStop(1, '#061525');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(0, H * 0.35, W, H * 0.65);
+
+    // Background ripple waves
+    for (let r = 0; r < 5; r++) {
+      const y = H * (0.55 + r * 0.08);
+      const amp = 8 + r * 3;
+      const freq = 0.008 - r * 0.001;
+      const phase = progress * Math.PI * 2 + r * 0.8;
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(42,95,143,${0.3 - r * 0.04})`;
+      ctx.lineWidth = 1.5;
+      for (let x = 0; x < W; x++) {
+        const yy = y + Math.sin(x * freq + phase) * amp;
+        x === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+
+    // ── Main Wave Body ──
+    const waveProgress = Math.min(1, progress * 1.1);
+    const waveHeight = H * 0.38 + (1 - waveProgress) * H * 0.25;
+    const crestX = W * 0.58;
+    const crestY = H * (0.08 + (1 - waveProgress) * 0.35);
+    const waveBase = H * 0.65;
+
+    // Wave body fill
+    const waveGrad = ctx.createLinearGradient(crestX * 0.4, crestY, crestX * 0.4, waveBase);
+    waveGrad.addColorStop(0, '#2A5F8F');
+    waveGrad.addColorStop(0.4, '#1A3A5C');
+    waveGrad.addColorStop(1, '#0D2640');
+    ctx.fillStyle = waveGrad;
+
+    ctx.beginPath();
+    // Left base
+    ctx.moveTo(W * 0.0, H * 0.72);
+    // Rise up left side
+    ctx.bezierCurveTo(
+      W * 0.1, H * 0.5,
+      W * 0.25, H * 0.35,
+      crestX - W * 0.22, crestY + H * 0.12
+    );
+    // Crest curve
+    ctx.bezierCurveTo(
+      crestX - W * 0.1, crestY - H * 0.04,
+      crestX + W * 0.05, crestY - H * 0.02,
+      crestX + W * 0.12, crestY + H * 0.06
+    );
+    // Right descend
+    ctx.bezierCurveTo(
+      crestX + W * 0.2, crestY + H * 0.18,
+      W * 0.95, H * 0.5,
+      W, waveBase
+    );
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Wave face highlight
+    const faceGrad = ctx.createLinearGradient(crestX - W*0.2, crestY, crestX, waveBase);
+    faceGrad.addColorStop(0, 'rgba(42,95,143,0.8)');
+    faceGrad.addColorStop(1, 'rgba(26,58,92,0)');
+    ctx.fillStyle = faceGrad;
+    ctx.beginPath();
+    ctx.moveTo(crestX - W*0.22, crestY + H*0.12);
+    ctx.bezierCurveTo(
+      crestX - W*0.18, crestY - H*0.05,
+      crestX + W*0.02, crestY - H*0.03,
+      crestX + W*0.12, crestY + H*0.06
+    );
+    ctx.bezierCurveTo(
+      crestX + W*0.05, crestY + H*0.25,
+      crestX - W*0.05, crestY + H*0.32,
+      crestX - W*0.22, crestY + H*0.12
+    );
+    ctx.fill();
+
+    // ── Foam Fingers / Claw ──
+    if (progress > 0.15) {
+      const foamOpacity = Math.min(1, (progress - 0.15) / 0.25);
+      const numFingers = 5;
+      for (let f = 0; f < numFingers; f++) {
+        const fx = crestX + (f - 1.5) * W * 0.045;
+        const fy = crestY - H * 0.02 - f * H * 0.02 * foamOpacity;
+        const fLen = (H * 0.09 + f * H * 0.02) * foamOpacity;
+        const fCurl = f * 0.3;
+
+        ctx.save();
+        ctx.globalAlpha = foamOpacity * (0.9 - f * 0.08);
+
+        // Foam finger body
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.bezierCurveTo(
+          fx + W * 0.01, fy - fLen * 0.4,
+          fx + W * 0.02 + fCurl * W * 0.01, fy - fLen * 0.75,
+          fx + W * 0.015 + fCurl * W * 0.015, fy - fLen
+        );
+        ctx.bezierCurveTo(
+          fx + W * 0.008, fy - fLen * 0.75,
+          fx - W * 0.006, fy - fLen * 0.4,
+          fx, fy
+        );
+
+        const fingerGrad = ctx.createLinearGradient(fx, fy, fx + W*0.02, fy - fLen);
+        fingerGrad.addColorStop(0, 'rgba(200,216,230,0.9)');
+        fingerGrad.addColorStop(0.5, 'rgba(232,240,248,0.95)');
+        fingerGrad.addColorStop(1, 'rgba(255,255,255,1)');
+        ctx.fillStyle = fingerGrad;
+        ctx.fill();
+
+        // White tip
+        ctx.beginPath();
+        ctx.ellipse(
+          fx + W * 0.015 + fCurl * W * 0.015,
+          fy - fLen,
+          W * 0.012, H * 0.014,
+          -0.3, 0, Math.PI * 2
+        );
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // ── Foreground Wave ──
+    if (progress > 0.1) {
+      const fgOpacity = Math.min(1, (progress - 0.1) / 0.3);
+      ctx.save();
+      ctx.globalAlpha = fgOpacity;
+      const fgGrad = ctx.createLinearGradient(0, H * 0.72, 0, H);
+      fgGrad.addColorStop(0, '#0D2640');
+      fgGrad.addColorStop(1, '#061525');
+      ctx.fillStyle = fgGrad;
+      ctx.beginPath();
+      ctx.moveTo(-20, H);
+      ctx.bezierCurveTo(W * 0.1, H * 0.74, W * 0.3, H * 0.7, W * 0.45, H * 0.75);
+      ctx.bezierCurveTo(W * 0.6, H * 0.79, W * 0.75, H * 0.71, W + 20, H * 0.73);
+      ctx.lineTo(W + 20, H);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ── Boats ──
+    if (progress > 0.4) {
+      const boatOpacity = Math.min(1, (progress - 0.4) / 0.2);
+      ctx.save();
+      ctx.globalAlpha = boatOpacity * 0.75;
+      const boats = [
+        { x: W * 0.14, y: H * 0.68, w: 60, sail: true },
+        { x: W * 0.32, y: H * 0.72, w: 48, sail: false },
+        { x: W * 0.08, y: H * 0.75, w: 44, sail: false },
+      ];
+      boats.forEach(b => {
+        ctx.fillStyle = '#061525';
+        // Hull
+        ctx.beginPath();
+        ctx.ellipse(b.x, b.y, b.w / 2, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Oars
+        for (let o = -1; o <= 1; o++) {
+          ctx.strokeStyle = 'rgba(6,21,37,0.8)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(b.x + o * b.w * 0.25, b.y - 4);
+          ctx.lineTo(b.x + o * b.w * 0.45, b.y + 10);
+          ctx.stroke();
+        }
+      });
+      ctx.restore();
+    }
+
+    // ── Water texture lines ──
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    ctx.strokeStyle = '#E8EFF7';
+    ctx.lineWidth = 1;
+    for (let l = 0; l < 12; l++) {
+      const ly = H * (0.4 + l * 0.05);
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 4) {
+        const y = ly + Math.sin(x * 0.012 + progress * 6 + l) * 4;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Scan line overlay for 'woodblock' feel ──
+    ctx.save();
+    ctx.globalAlpha = 0.025;
+    for (let sl = 0; sl < H; sl += 4) {
+      ctx.fillStyle = '#0F0F0E';
+      ctx.fillRect(0, sl, W, 1);
+    }
+    ctx.restore();
+  }
+
+  // Draw initial frame
+  drawFrame(0);
+
+  // ScrollTrigger scrubber
+  ScrollTrigger.create({
+    trigger: '#scroll-sequence',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: 1,
+    onUpdate: self => {
+      const rawFrame = Math.round(self.progress * TOTAL_FRAMES);
+      currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, rawFrame));
+
+      drawFrame(currentFrame);
+
+      // Update UI
+      document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
+      document.getElementById('progressFill').style.height = (self.progress * 100) + '%';
+
+      // Caption
+      const captionEl = document.getElementById('seqCaption');
+      const captionText = document.getElementById('seqCaptionText');
+      const newCaption = getCaption(self.progress);
+      if (newCaption !== captionText.textContent) {
+        captionText.textContent = newCaption;
+        captionEl.classList.add('visible');
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
