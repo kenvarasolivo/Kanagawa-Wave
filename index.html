@@ -148,7 +148,6 @@
   .hero-video-container video {
     width: 100%; height: 100%;
     object-fit: cover;
-    filter: saturate(0.85) contrast(1.05) brightness(0.7);
   }
 
   /* Fallback gradient when no video */
@@ -180,7 +179,7 @@
 
   .hero-title {
     position: absolute;
-    top: 15%;
+    top: 17.5%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
@@ -188,6 +187,16 @@
     justify-content: center;
     align-items: center;
     pointer-events: none;
+    flex-direction: column;
+  }
+
+  .hero-subtitle {
+    font-family: var(--serif, serif); /* Uses your serif variable, defaults to standard serif */
+    font-size: clamp(1.2rem, 3vw, 3rem); /* Responsive sizing, much smaller than the main text */
+    font-style: italic;
+    color: white; /* Matches KANAGAWA */
+    margin-bottom: -0.5rem; /* Optional: Pulls it slightly closer to KANAGAWA */
+    mix-blend-mode: normal;
   }
 
   .hero-title-main {
@@ -598,28 +607,13 @@
     overflow: hidden;
   }
 
-  .hokusai-portrait-inner {
-    width: 100%; height: 100%;
-    background:
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 39px,
-        var(--ink-08) 39px,
-        var(--ink-08) 40px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 39px,
-        var(--ink-08) 40px,
-        var(--ink-08) 40px
-      );
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--display);
-    font-size: clamp(5rem, 12vw, 10rem);
-    color: var(--ink-08);
-    letter-spacing: -0.05em;
+  .hokusai-artist-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* This makes the image fill the 3:4 frame without distorting */
+    object-position: center; /* Centers the image content */
+    position: absolute; /* Replaces the flow position of the old inner div */
+    top: 0; left: 0;
   }
 
   .hokusai-portrait-caption {
@@ -753,7 +747,7 @@
 
 <!-- NAV -->
 <nav>
-  <a href="#" class="nav-logo">KNW</a>
+  <a href="#" class="nav-logo">KSL</a>
   <ul class="nav-links">
     <li><a href="#intro">About</a></li>
     <li><a href="#scroll-sequence">The Wave</a></li>
@@ -805,6 +799,9 @@
   </div>
 
   <div class="hero-title">
+    <div class="hero-subtitle">
+      <span>The Great Wave of</span>
+    </div>
     <div class="hero-title-main">
       <span class="reveal-hero">KANAGAWA</span>
     </div>
@@ -866,7 +863,7 @@
 <section id="scroll-sequence">
   <div class="sequence-sticky">
     <div class="sequence-canvas-wrap">
-      <canvas id="waveCanvas" width="1200" height="800"></canvas>
+      <video id="scrollVideo" width="1200" height="800" style="width: 100%; height: auto; display: block;"></video>
     </div>
 
     <div class="sequence-progress">
@@ -976,8 +973,8 @@
   <div class="hokusai-inner">
     <div class="hokusai-portrait reveal-up">
       <div class="hokusai-portrait-frame">
-        <div class="hokusai-portrait-inner">北斎</div>
-        <div class="hokusai-portrait-caption">Katsushika Hokusai — Portrait placeholder</div>
+        <img src="artist.png" alt="Portrait of Katsushika Hokusai" class="hokusai-artist-photo">
+        <div class="hokusai-portrait-caption">Katsushika Hokusai</div>
       </div>
     </div>
     <div class="hokusai-text-block">
@@ -999,9 +996,9 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">KNW</div>
+  <div class="footer-logo">KSL</div>
   <div class="footer-line">神奈川沖浪裏 — An Interactive Experience</div>
-  <div class="footer-line">© 2025 — All rights reserved</div>
+  <div class="footer-line">© 2026 - Kenvara Solivo Lwie — All rights reserved</div>
 </footer>
 
 <script>
@@ -1123,17 +1120,17 @@ function initAnimations() {
 }
 
 /* ─────────────────────────────────────────────
-   WAVE CANVAS SEQUENCE
-   Renders a programmatic frame-by-frame wave
-   animation driven by scroll position.
-   Replace with real image sequence when available.
+   WAVE VIDEO SEQUENCE
+   Plays scroll.mp4 frame-by-frame based on scroll position.
 ───────────────────────────────────────────── */
 function initWaveSequence() {
-  const canvas = document.getElementById('waveCanvas');
-  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('scrollVideo');
   const TOTAL_FRAMES = 120;
   const SCROLL_HEIGHT = window.innerHeight * 6; // 600vh of scroll
 
+  // Load the video
+  video.src = 'scroll.mp4';
+  
   // Set sequence section height
   document.getElementById('scroll-sequence').style.height = SCROLL_HEIGHT + 'px';
   document.getElementById('frameTot').textContent = String(TOTAL_FRAMES).padStart(3, '0');
@@ -1157,250 +1154,10 @@ function initWaveSequence() {
     return current;
   }
 
-  function drawFrame(frame) {
-    const progress = frame / TOTAL_FRAMES; // 0 → 1
-    const W = canvas.width, H = canvas.height;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
-    const skyBrightness = 0.3 + progress * 0.5;
-    skyGrad.addColorStop(0, `rgba(240,243,248,${skyBrightness})`);
-    skyGrad.addColorStop(1, `rgba(220,232,245,${skyBrightness * 0.6})`);
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Mt. Fuji (appears at progress > 0.5)
-    if (progress > 0.3) {
-      const fujiOpacity = Math.max(0, (progress - 0.3) / 0.3);
-      ctx.save();
-      ctx.globalAlpha = fujiOpacity * 0.55;
-      ctx.fillStyle = '#8FA8C0';
-      ctx.beginPath();
-      ctx.moveTo(W * 0.12, H * 0.45);
-      ctx.lineTo(W * 0.22, H * 0.22);
-      ctx.lineTo(W * 0.32, H * 0.45);
-      ctx.closePath();
-      ctx.fill();
-      // Snow cap
-      ctx.fillStyle = '#E8EFF7';
-      ctx.beginPath();
-      ctx.moveTo(W * 0.185, H * 0.28);
-      ctx.lineTo(W * 0.22, H * 0.22);
-      ctx.lineTo(W * 0.255, H * 0.28);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Ocean base
-    const oceanGrad = ctx.createLinearGradient(0, H * 0.35, 0, H);
-    oceanGrad.addColorStop(0, '#1A3A5C');
-    oceanGrad.addColorStop(0.5, '#0D2640');
-    oceanGrad.addColorStop(1, '#061525');
-    ctx.fillStyle = oceanGrad;
-    ctx.fillRect(0, H * 0.35, W, H * 0.65);
-
-    // Background ripple waves
-    for (let r = 0; r < 5; r++) {
-      const y = H * (0.55 + r * 0.08);
-      const amp = 8 + r * 3;
-      const freq = 0.008 - r * 0.001;
-      const phase = progress * Math.PI * 2 + r * 0.8;
-      ctx.beginPath();
-      ctx.strokeStyle = `rgba(42,95,143,${0.3 - r * 0.04})`;
-      ctx.lineWidth = 1.5;
-      for (let x = 0; x < W; x++) {
-        const yy = y + Math.sin(x * freq + phase) * amp;
-        x === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
-      }
-      ctx.stroke();
-    }
-
-    // ── Main Wave Body ──
-    const waveProgress = Math.min(1, progress * 1.1);
-    const waveHeight = H * 0.38 + (1 - waveProgress) * H * 0.25;
-    const crestX = W * 0.58;
-    const crestY = H * (0.08 + (1 - waveProgress) * 0.35);
-    const waveBase = H * 0.65;
-
-    // Wave body fill
-    const waveGrad = ctx.createLinearGradient(crestX * 0.4, crestY, crestX * 0.4, waveBase);
-    waveGrad.addColorStop(0, '#2A5F8F');
-    waveGrad.addColorStop(0.4, '#1A3A5C');
-    waveGrad.addColorStop(1, '#0D2640');
-    ctx.fillStyle = waveGrad;
-
-    ctx.beginPath();
-    // Left base
-    ctx.moveTo(W * 0.0, H * 0.72);
-    // Rise up left side
-    ctx.bezierCurveTo(
-      W * 0.1, H * 0.5,
-      W * 0.25, H * 0.35,
-      crestX - W * 0.22, crestY + H * 0.12
-    );
-    // Crest curve
-    ctx.bezierCurveTo(
-      crestX - W * 0.1, crestY - H * 0.04,
-      crestX + W * 0.05, crestY - H * 0.02,
-      crestX + W * 0.12, crestY + H * 0.06
-    );
-    // Right descend
-    ctx.bezierCurveTo(
-      crestX + W * 0.2, crestY + H * 0.18,
-      W * 0.95, H * 0.5,
-      W, waveBase
-    );
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-
-    // Wave face highlight
-    const faceGrad = ctx.createLinearGradient(crestX - W*0.2, crestY, crestX, waveBase);
-    faceGrad.addColorStop(0, 'rgba(42,95,143,0.8)');
-    faceGrad.addColorStop(1, 'rgba(26,58,92,0)');
-    ctx.fillStyle = faceGrad;
-    ctx.beginPath();
-    ctx.moveTo(crestX - W*0.22, crestY + H*0.12);
-    ctx.bezierCurveTo(
-      crestX - W*0.18, crestY - H*0.05,
-      crestX + W*0.02, crestY - H*0.03,
-      crestX + W*0.12, crestY + H*0.06
-    );
-    ctx.bezierCurveTo(
-      crestX + W*0.05, crestY + H*0.25,
-      crestX - W*0.05, crestY + H*0.32,
-      crestX - W*0.22, crestY + H*0.12
-    );
-    ctx.fill();
-
-    // ── Foam Fingers / Claw ──
-    if (progress > 0.15) {
-      const foamOpacity = Math.min(1, (progress - 0.15) / 0.25);
-      const numFingers = 5;
-      for (let f = 0; f < numFingers; f++) {
-        const fx = crestX + (f - 1.5) * W * 0.045;
-        const fy = crestY - H * 0.02 - f * H * 0.02 * foamOpacity;
-        const fLen = (H * 0.09 + f * H * 0.02) * foamOpacity;
-        const fCurl = f * 0.3;
-
-        ctx.save();
-        ctx.globalAlpha = foamOpacity * (0.9 - f * 0.08);
-
-        // Foam finger body
-        ctx.beginPath();
-        ctx.moveTo(fx, fy);
-        ctx.bezierCurveTo(
-          fx + W * 0.01, fy - fLen * 0.4,
-          fx + W * 0.02 + fCurl * W * 0.01, fy - fLen * 0.75,
-          fx + W * 0.015 + fCurl * W * 0.015, fy - fLen
-        );
-        ctx.bezierCurveTo(
-          fx + W * 0.008, fy - fLen * 0.75,
-          fx - W * 0.006, fy - fLen * 0.4,
-          fx, fy
-        );
-
-        const fingerGrad = ctx.createLinearGradient(fx, fy, fx + W*0.02, fy - fLen);
-        fingerGrad.addColorStop(0, 'rgba(200,216,230,0.9)');
-        fingerGrad.addColorStop(0.5, 'rgba(232,240,248,0.95)');
-        fingerGrad.addColorStop(1, 'rgba(255,255,255,1)');
-        ctx.fillStyle = fingerGrad;
-        ctx.fill();
-
-        // White tip
-        ctx.beginPath();
-        ctx.ellipse(
-          fx + W * 0.015 + fCurl * W * 0.015,
-          fy - fLen,
-          W * 0.012, H * 0.014,
-          -0.3, 0, Math.PI * 2
-        );
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    // ── Foreground Wave ──
-    if (progress > 0.1) {
-      const fgOpacity = Math.min(1, (progress - 0.1) / 0.3);
-      ctx.save();
-      ctx.globalAlpha = fgOpacity;
-      const fgGrad = ctx.createLinearGradient(0, H * 0.72, 0, H);
-      fgGrad.addColorStop(0, '#0D2640');
-      fgGrad.addColorStop(1, '#061525');
-      ctx.fillStyle = fgGrad;
-      ctx.beginPath();
-      ctx.moveTo(-20, H);
-      ctx.bezierCurveTo(W * 0.1, H * 0.74, W * 0.3, H * 0.7, W * 0.45, H * 0.75);
-      ctx.bezierCurveTo(W * 0.6, H * 0.79, W * 0.75, H * 0.71, W + 20, H * 0.73);
-      ctx.lineTo(W + 20, H);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ── Boats ──
-    if (progress > 0.4) {
-      const boatOpacity = Math.min(1, (progress - 0.4) / 0.2);
-      ctx.save();
-      ctx.globalAlpha = boatOpacity * 0.75;
-      const boats = [
-        { x: W * 0.14, y: H * 0.68, w: 60, sail: true },
-        { x: W * 0.32, y: H * 0.72, w: 48, sail: false },
-        { x: W * 0.08, y: H * 0.75, w: 44, sail: false },
-      ];
-      boats.forEach(b => {
-        ctx.fillStyle = '#061525';
-        // Hull
-        ctx.beginPath();
-        ctx.ellipse(b.x, b.y, b.w / 2, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Oars
-        for (let o = -1; o <= 1; o++) {
-          ctx.strokeStyle = 'rgba(6,21,37,0.8)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(b.x + o * b.w * 0.25, b.y - 4);
-          ctx.lineTo(b.x + o * b.w * 0.45, b.y + 10);
-          ctx.stroke();
-        }
-      });
-      ctx.restore();
-    }
-
-    // ── Water texture lines ──
-    ctx.save();
-    ctx.globalAlpha = 0.07;
-    ctx.strokeStyle = '#E8EFF7';
-    ctx.lineWidth = 1;
-    for (let l = 0; l < 12; l++) {
-      const ly = H * (0.4 + l * 0.05);
-      ctx.beginPath();
-      for (let x = 0; x < W; x += 4) {
-        const y = ly + Math.sin(x * 0.012 + progress * 6 + l) * 4;
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // ── Scan line overlay for 'woodblock' feel ──
-    ctx.save();
-    ctx.globalAlpha = 0.025;
-    for (let sl = 0; sl < H; sl += 4) {
-      ctx.fillStyle = '#0F0F0E';
-      ctx.fillRect(0, sl, W, 1);
-    }
-    ctx.restore();
-  }
-
-  // Draw initial frame
-  drawFrame(0);
+  // Wait for video metadata to load
+  video.addEventListener('loadedmetadata', () => {
+    video.pause(); // Prevent autoplay
+  });
 
   // ScrollTrigger scrubber
   ScrollTrigger.create({
@@ -1412,7 +1169,10 @@ function initWaveSequence() {
       const rawFrame = Math.round(self.progress * TOTAL_FRAMES);
       currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, rawFrame));
 
-      drawFrame(currentFrame);
+      // Calculate time in video based on frame number
+      const videoDuration = video.duration || 1;
+      const frameProgress = currentFrame / TOTAL_FRAMES;
+      video.currentTime = frameProgress * videoDuration;
 
       // Update UI
       document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
