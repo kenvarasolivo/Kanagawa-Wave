@@ -863,7 +863,7 @@
 <section id="scroll-sequence">
   <div class="sequence-sticky">
     <div class="sequence-canvas-wrap">
-      <video id="scrollVideo" width="1200" height="800" style="width: 100%; height: auto; display: block;"></video>
+      <video id="scrollVideo" width="1200" height="800" preload="auto" muted playsinline style="width: 100%; height: auto; display: block;"></video>
     </div>
 
     <div class="sequence-progress">
@@ -1126,16 +1126,12 @@ function initAnimations() {
 function initWaveSequence() {
   const video = document.getElementById('scrollVideo');
   const TOTAL_FRAMES = 120;
-  const SCROLL_HEIGHT = window.innerHeight * 6; // 600vh of scroll
+  const SCROLL_HEIGHT = window.innerHeight * 6;
 
-  // Load the video
   video.src = 'scroll.mp4';
-  
-  // Set sequence section height
+
   document.getElementById('scroll-sequence').style.height = SCROLL_HEIGHT + 'px';
   document.getElementById('frameTot').textContent = String(TOTAL_FRAMES).padStart(3, '0');
-
-  let currentFrame = 0;
 
   const captions = [
     { at: 0.0, text: 'The deep ocean stirs...' },
@@ -1154,40 +1150,63 @@ function initWaveSequence() {
     return current;
   }
 
-  // Wait for video metadata to load
-  video.addEventListener('loadedmetadata', () => {
-    video.pause(); // Prevent autoplay
-  });
+  function setup() {
+    video.pause();
 
-  // ScrollTrigger scrubber
-  ScrollTrigger.create({
-    trigger: '#scroll-sequence',
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: 1,
-    onUpdate: self => {
-      const rawFrame = Math.round(self.progress * TOTAL_FRAMES);
-      currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, rawFrame));
+    // Seek queue: only one seek in-flight at a time; buffer the latest target
+    let isSeeking = false;
+    let pendingTime = null;
 
-      // Calculate time in video based on frame number
-      const videoDuration = video.duration || 1;
-      const frameProgress = currentFrame / TOTAL_FRAMES;
-      video.currentTime = frameProgress * videoDuration;
+    function flushSeek() {
+      if (pendingTime === null) return;
+      isSeeking = true;
+      const t = pendingTime;
+      pendingTime = null;
 
-      // Update UI
-      document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
-      document.getElementById('progressFill').style.height = (self.progress * 100) + '%';
+      if ('fastSeek' in video) {
+        video.fastSeek(t);
+      } else {
+        video.currentTime = t;
+      }
 
-      // Caption
-      const captionEl = document.getElementById('seqCaption');
-      const captionText = document.getElementById('seqCaptionText');
-      const newCaption = getCaption(self.progress);
-      if (newCaption !== captionText.textContent) {
-        captionText.textContent = newCaption;
-        captionEl.classList.add('visible');
+      const onDone = () => { isSeeking = false; flushSeek(); };
+
+      if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+        video.requestVideoFrameCallback(onDone);
+      } else {
+        video.addEventListener('seeked', onDone, { once: true });
       }
     }
-  });
+
+    ScrollTrigger.create({
+      trigger: '#scroll-sequence',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 0.5,
+      onUpdate: self => {
+        pendingTime = self.progress * (video.duration || 1);
+        if (!isSeeking) flushSeek();
+
+        const currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, Math.round(self.progress * TOTAL_FRAMES)));
+        document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
+        document.getElementById('progressFill').style.height = (self.progress * 100) + '%';
+
+        const captionEl = document.getElementById('seqCaption');
+        const captionText = document.getElementById('seqCaptionText');
+        const newCaption = getCaption(self.progress);
+        if (newCaption !== captionText.textContent) {
+          captionText.textContent = newCaption;
+          captionEl.classList.add('visible');
+        }
+      }
+    });
+  }
+
+  if (video.readyState >= 1) {
+    setup();
+  } else {
+    video.addEventListener('loadedmetadata', setup, { once: true });
+  }
 }
 </script>
 </body>
