@@ -1126,9 +1126,9 @@ function initAnimations() {
 function initWaveSequence() {
   const video = document.getElementById('scrollVideo');
   const TOTAL_FRAMES = 120;
-  const SCROLL_HEIGHT = window.innerHeight * 6;
+  const SCROLL_HEIGHT = window.innerHeight * 3;
 
-  video.src = 'scroll.mp4';
+  video.src = 'scroll_keyframes.mp4';
 
   document.getElementById('scroll-sequence').style.height = SCROLL_HEIGHT + 'px';
   document.getElementById('frameTot').textContent = String(TOTAL_FRAMES).padStart(3, '0');
@@ -1153,53 +1153,29 @@ function initWaveSequence() {
   function setup() {
     video.pause();
 
-    // Seek queue: only one seek in-flight at a time; buffer the latest target
-    let isSeeking = false;
-    let pendingTime = null;
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#scroll-sequence',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1,
+        onUpdate: self => {
+          const currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, Math.round(self.progress * TOTAL_FRAMES)));
+          document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
+          document.getElementById('progressFill').style.height = (self.progress * 100) + '%';
 
-    function flushSeek() {
-      if (pendingTime === null) return;
-      isSeeking = true;
-      const t = pendingTime;
-      pendingTime = null;
-
-      if ('fastSeek' in video) {
-        video.fastSeek(t);
-      } else {
-        video.currentTime = t;
-      }
-
-      const onDone = () => { isSeeking = false; flushSeek(); };
-
-      if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-        video.requestVideoFrameCallback(onDone);
-      } else {
-        video.addEventListener('seeked', onDone, { once: true });
-      }
-    }
-
-    ScrollTrigger.create({
-      trigger: '#scroll-sequence',
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.5,
-      onUpdate: self => {
-        pendingTime = self.progress * (video.duration || 1);
-        if (!isSeeking) flushSeek();
-
-        const currentFrame = Math.max(0, Math.min(TOTAL_FRAMES, Math.round(self.progress * TOTAL_FRAMES)));
-        document.getElementById('frameNum').textContent = String(currentFrame).padStart(3, '0');
-        document.getElementById('progressFill').style.height = (self.progress * 100) + '%';
-
-        const captionEl = document.getElementById('seqCaption');
-        const captionText = document.getElementById('seqCaptionText');
-        const newCaption = getCaption(self.progress);
-        if (newCaption !== captionText.textContent) {
-          captionText.textContent = newCaption;
-          captionEl.classList.add('visible');
+          const captionEl = document.getElementById('seqCaption');
+          const captionText = document.getElementById('seqCaptionText');
+          const newCaption = getCaption(self.progress);
+          if (newCaption !== captionText.textContent) {
+            captionText.textContent = newCaption;
+            captionEl.classList.add('visible');
+          }
         }
       }
     });
+
+    tl.fromTo(video, { currentTime: 0 }, { currentTime: video.duration, ease: 'none' });
   }
 
   if (video.readyState >= 1) {
